@@ -1,0 +1,94 @@
+erDiagram
+    USER ||--o{ PROPERTY : "owns"
+    USER ||--o{ APPLICATION : "submits (homeowner)"
+    USER |o--o{ APPLICATION : "assigned (staff)"
+    PROPERTY ||--o{ SUITE : "has"
+    SUITE ||--|| APPLICATION : "scoped by"
+    APPLICATION ||--o{ APPLICATIONSTATUSHISTORY : "logs"
+    APPLICATION ||--o{ COMPLIANCEITEM : "includes"
+    APPLICATION ||--o{ PERMIT : "requires"
+    APPLICATION ||--o{ DOCUMENT : "collects"
+    APPLICATION ||--o{ VISIT : "schedules"
+
+    USER {
+        uuid id PK
+        string email UK
+        string role "homeowner | staff | admin"
+        string first_name
+        string last_name
+        string phone
+        datetime date_joined
+    }
+    PROPERTY {
+        uuid id PK
+        uuid owner_id FK
+        string street_address
+        string city "default Calgary"
+        string province "default AB"
+        string postal_code
+        string land_use_district "nullable"
+        int year_built "nullable; drives asbestos req"
+        datetime created_at
+    }
+    SUITE {
+        uuid id PK
+        uuid property_id FK
+        string suite_type "new | legalize_existing"
+        bool has_separate_entrance "nullable"
+        text description
+    }
+    APPLICATION {
+        uuid id PK
+        uuid homeowner_id FK
+        uuid property_id FK
+        uuid suite_id FK
+        uuid assigned_staff_id FK "nullable"
+        string status
+        bool pursuing_incentive
+        datetime submitted_at "nullable"
+        datetime created_at
+        datetime updated_at
+    }
+    APPLICATIONSTATUSHISTORY {
+        uuid id PK
+        uuid application_id FK
+        string from_status "nullable"
+        string to_status
+        uuid changed_by_id FK
+        text note
+        datetime created_at
+    }
+    COMPLIANCEITEM {
+        uuid id PK
+        uuid application_id FK
+        string item_type
+        string status "not_assessed | needs_work | compliant | na"
+        text notes
+    }
+    PERMIT {
+        uuid id PK
+        uuid application_id FK
+        string permit_type "development | building | electrical | plumbing | gas | mechanical"
+        string permit_number "nullable"
+        string status "not_required | not_started | applied | approved | rejected | expired"
+        date applied_date "nullable"
+        date approved_date "nullable"
+    }
+    DOCUMENT {
+        uuid id PK
+        uuid application_id FK
+        string doc_type
+        string file "storage key; nullable until uploaded"
+        string status "required | uploaded | accepted | rejected"
+        uuid uploaded_by_id FK "nullable"
+        datetime uploaded_at "nullable"
+    }
+    VISIT {
+        uuid id PK
+        uuid application_id FK
+        string visit_type "site_assessment | inspection"
+        datetime scheduled_for
+        uuid assigned_staff_id FK "nullable"
+        string status "scheduled | completed | cancelled | no_show"
+        text outcome_notes
+    }

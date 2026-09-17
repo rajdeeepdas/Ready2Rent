@@ -1,0 +1,31 @@
+# Ready2Rent backend — pinned per Gate 1 approval (Python 3.14).
+# Only packages needed so far are listed; later milestones append their approved packages.
+
+# Core
+Django==6.1.1
+djangorestframework==3.18.1
+psycopg[binary]==3.3.5
+django-environ==0.14.0
+django-cors-headers==4.9.0
+
+# Redis client (health check now; cache backend + Celery broker in Milestone 5)
+django-redis==7.0.0
+redis==6.4.0
+
+# Testing (approved at Gate 1)
+pytest==9.1.1
+pytest-django==4.14.0
+factory-boy==3.3.3
+
+# Auth (approved at Gate 1 / Gate 3)
+djangorestframework-simplejwt==5.5.1
+
+# Background jobs (approved at Gate 1)
+celery[redis]==5.6.3
+
+# Production serving (approved at Gate 1; gunicorn runs on the Linux host, not on Windows)
+gunicorn==26.2.0
+whitenoise==6.12.0
+
+# Coverage reporting (approved at launch)
+pytest-cov==7.0.0

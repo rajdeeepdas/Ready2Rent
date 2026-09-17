@@ -1,0 +1,41 @@
+# Local infrastructure only: PostgreSQL + Redis.
+# Django and the React dev server run natively on the host (see README.md).
+# Values come from .env in this directory (docker compose loads it automatically).
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: ready2rent-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ready2rent}
+      POSTGRES_USER: ${POSTGRES_USER:-ready2rent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ready2rent} -d ${POSTGRES_DB:-ready2rent}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    container_name: ready2rent-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:

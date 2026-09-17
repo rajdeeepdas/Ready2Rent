@@ -1,0 +1,351 @@
+/* Landing page layout. Colors and copy are unchanged from the original component. */
+
+.lp {
+  --lp-green: #176B50;
+  --lp-green-mid: #1a6b4a;
+  --lp-green-light: #e8f5ef;
+  --lp-green-border: #c8e6d8;
+  --lp-text-dark: #152C24;
+  --lp-text-mid: #555;
+  --lp-text-muted: #888;
+  --lp-border: #e5e5e5;
+  --lp-max: 1120px;
+  --lp-pad-x: clamp(1.25rem, 5vw, 4rem);
+  --lp-pad-y: clamp(2rem, 5vw, 4rem);
+  --lp-measure: 60ch;
+
+  font-family: Inter, system-ui, sans-serif;
+  background: #fff;
+  color: var(--lp-text-dark);
+  min-height: 100vh;
+  overflow-x: hidden; /* belt and braces: nothing inside may cause a horizontal scrollbar */
+}
+
+.lp *,
+.lp *::before,
+.lp *::after { box-sizing: border-box; }
+
+.lp img, .lp svg { max-width: 100%; }
+
+/* Every section shares one centered container with side padding that never hits the edge. */
+.lp-container {
+  width: 100%;
+  max-width: var(--lp-max);
+  margin: 0 auto;
+  padding-left: var(--lp-pad-x);
+  padding-right: var(--lp-pad-x);
+}
+
+.lp-section {
+  border-top: 0.5px solid var(--lp-border);
+  padding-top: var(--lp-pad-y);
+  padding-bottom: var(--lp-pad-y);
+}
+
+/* Readable text measure inside the wide container */
+.lp-measure { max-width: var(--lp-measure); }
+
+/* ---------------------------------------------------------------- Logo */
+.lp-logo { display: inline-flex; align-items: center; gap: 10px; }
+.lp-logo-text { font-weight: 700; color: var(--lp-text-dark); letter-spacing: -0.3px; white-space: nowrap; }
+.lp-logo-text em { font-style: normal; color: var(--lp-green); }
+.lp-logo--md svg { width: 38px; height: 38px; }
+.lp-logo--md .lp-logo-text { font-size: 20px; }
+.lp-logo--sm svg { width: 28px; height: 28px; }
+.lp-logo--sm .lp-logo-text { font-size: 16px; }
+
+/* --------------------------------------------------------------- Navbar */
+.lp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  border-bottom: 0.5px solid var(--lp-border);
+}
+.lp-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.lp-nav-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 28px;
+}
+.lp-nav-links a {
+  font-size: 14px;
+  color: var(--lp-text-mid);
+  text-decoration: none;
+}
+
+/* Buttons */
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.lp-btn--primary {
+  background: var(--lp-green);
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+}
+.lp-btn--primary:hover { background: var(--lp-green-mid); }
+.lp-btn--lg { font-size: 15px; padding: 12px 26px; }
+.lp-btn--ghost {
+  background: transparent;
+  color: #333;
+  border: 0.5px solid #ccc;
+  padding: 12px 26px;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+/* ----------------------------------------------------------------- Hero */
+.lp-hero {
+  padding-top: clamp(2.5rem, 6vw, 5rem);
+  padding-bottom: clamp(2.5rem, 6vw, 5rem);
+}
+.lp-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--lp-green-light);
+  border-radius: 20px;
+  padding: 4px 14px;
+  margin-bottom: 1.5rem;
+  font-size: 12px;
+  color: var(--lp-green);
+  font-weight: 500;
+}
+.lp-hero h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 700;
+  color: var(--lp-text-dark);
+  line-height: 1.12;
+  letter-spacing: -0.8px;
+  margin: 0 0 1rem;
+}
+.lp-hero h1 span { color: var(--lp-green); }
+.lp-hero p {
+  font-size: clamp(1rem, 1.6vw, 1.125rem);
+  color: var(--lp-text-mid);
+  line-height: 1.75;
+  margin: 0 auto 2rem;
+  max-width: 34rem;
+}
+.lp-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+/* One centered column: the focal point of the page, not text beside a void. */
+.lp-hero-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+
+/* ---------------------------------------------------------------- About */
+.lp-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lp-green);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+.lp h2 {
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 700;
+  color: var(--lp-text-dark);
+  letter-spacing: -0.3px;
+  margin: 0 0 1rem;
+}
+.lp-lead {
+  max-width: 72ch;
+  font-size: 15px;
+  color: var(--lp-text-mid);
+  line-height: 1.75;
+  margin: 0 0 2rem;
+}
+/* About intro is centered like the hero; the photo and news card below stay full width. */
+.lp-about-intro { max-width: 720px; margin: 0 auto; text-align: center; }
+.lp-about-intro .lp-lead { margin-left: auto; margin-right: auto; }
+
+.lp-photo-card {
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 0.5px solid var(--lp-border);
+  margin-bottom: 1.25rem;
+}
+.lp-photo-card img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 560px;
+  object-fit: cover;
+  /* The team stands in the lower part of the photo; bias the crop there on wide screens. */
+  object-position: center 80%;
+}
+.lp-photo-caption {
+  padding: 1rem 1.25rem;
+  background: #fafafa;
+  margin: 0;
+  font-size: 13px;
+  color: var(--lp-text-mid);
+  line-height: 1.5;
+}
+.lp-news {
+  width: 100%;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: #f7fbf9;
+  border: 0.5px solid var(--lp-green-border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+.lp-news-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--lp-green-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+.lp-news-title { margin: 0 0 3px; font-size: 14px; font-weight: 500; color: var(--lp-text-dark); line-height: 1.4; }
+.lp-news-meta { margin: 0 0 6px; font-size: 12px; color: var(--lp-text-muted); }
+.lp-news a { font-size: 12px; color: var(--lp-green); text-decoration: none; }
+
+/* ----------------------------------------------------------------- Team */
+.lp-team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.lp-member {
+  background: #fafafa;
+  border: 0.5px solid var(--lp-border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  min-width: 0;
+}
+.lp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--lp-green-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lp-green);
+}
+.lp-member--link { text-decoration: none; color: inherit; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.lp-member--link:hover, .lp-member--link:focus-visible {
+  border-color: var(--lp-green);
+  box-shadow: 0 0 0 3px var(--lp-green-light);
+  outline: none;
+}
+.lp-member--link .lp-member-name { color: var(--lp-green); }
+.lp-member-name { margin: 0; font-size: 13px; font-weight: 500; color: var(--lp-text-dark); }
+.lp-member-role { margin: 0; font-size: 11px; color: var(--lp-text-muted); line-height: 1.4; }
+
+/* ---------------------------------------------------------- How it works */
+.lp-how-grid { display: grid; grid-template-columns: 1fr; gap: 1rem 3rem; align-items: start; }
+.lp-how-head h2 { margin-bottom: 1rem; }
+.lp-steps { display: flex; flex-direction: column; }
+.lp-step {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  margin-left: 20px;
+  padding-left: 24px;
+  padding-bottom: 1.5rem;
+  border-left: 1.5px solid var(--lp-green-border);
+}
+.lp-step:last-child { padding-bottom: 0; border-left-color: transparent; }
+.lp-step-num {
+  position: absolute;
+  left: -11px;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--lp-green);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.lp-step-title { margin: 0 0 4px; font-size: 15px; font-weight: 500; color: var(--lp-text-dark); }
+.lp-step-body { margin: 0; font-size: 14px; color: #666; line-height: 1.6; }
+
+/* --------------------------------------------------------------- Footer */
+.lp-footer { border-top: 0.5px solid var(--lp-border); }
+.lp-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+.lp-footer p { margin: 0; font-size: 12px; color: #aaa; }
+
+/* ========================================================== Breakpoints */
+
+/* Tablet: 640px and up */
+@media (min-width: 640px) {
+  .lp-team-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Desktop: 1024px and up */
+@media (min-width: 1024px) {
+  /* Heading on the left, the linear timeline on the right; the heading sticks while scrolling. */
+  .lp-how-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+  .lp-how-head { position: sticky; top: 5.5rem; }
+}
+
+/* Phone: below 640px */
+@media (max-width: 639.98px) {
+  .lp-section, .lp-hero { padding-top: 2rem; padding-bottom: 2rem; }
+  .lp-container { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .lp-hero h1 { font-size: 2rem; }
+  .lp-nav-inner { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  .lp-nav-links { width: 100%; justify-content: space-between; gap: 0.5rem 1rem; }
+  .lp-hero-inner, .lp-about-intro { text-align: left; }
+  .lp-hero p, .lp-about-intro .lp-lead { margin-left: 0; }
+  .lp-hero-actions { justify-content: flex-start; }
+  .lp-hero-actions .lp-btn { flex: 1 1 auto; }
+  .lp-footer-inner { flex-direction: column; align-items: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}

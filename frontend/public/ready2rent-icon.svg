@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="icon-title">
+<title id="icon-title">Ready2Rent open-door house symbol</title>
+<g id="home-symbol">
+  <path fill="#176B50" fill-rule="evenodd" d="M16 56 Q16 52 20 49 L58 19 Q64 14 70 19 L108 49 Q112 52 112 56 V106 Q112 114 104 114 H24 Q16 114 16 106 Z M51 65 Q48 65 48 68 V114 H80 V68 Q80 65 77 65 Z"/>
+  <path fill="#71C6A3" d="M52 69 L73 76 Q76 77 76 80 V111 Q76 114 73 113 L52 106 Z"/>
+  <circle cx="69" cy="94" r="2" fill="#176B50"/>
+</g>
+</svg>

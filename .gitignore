@@ -1,0 +1,39 @@
+# ---- Secrets / environment ----
+.env
+.env.*
+!.env.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+backend/venv/
+backend/.venv/
+
+# ---- Django ----
+backend/staticfiles/
+backend/media/
+*.sqlite3
+
+# ---- Node / Vite ----
+node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+
+# ---- Docker volumes (local data) ----
+.docker-data/
+
+# ---- Editors / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Claude Code local state ----
+.claude/settings.local.json

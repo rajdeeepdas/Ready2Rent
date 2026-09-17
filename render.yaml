@@ -1,0 +1,82 @@
+# Render Blueprint for the Ready2Rent backend: Django API + PostgreSQL + Redis (Key Value).
+# Deploy: Render dashboard -> New -> Blueprint -> pick this GitHub repo. See docs/DEPLOY.md.
+#
+# Values marked `sync: false` are prompted for in the dashboard during Blueprint setup.
+# Never commit real secrets to this file.
+
+services:
+  - type: web
+    name: ready2rent-api
+    runtime: python
+    region: oregon
+    plan: starter            # always on: no cold starts
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    preDeployCommand: python manage.py migrate --noinput && python manage.py flushexpiredtokens
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --access-logfile -
+    healthCheckPath: /api/livez/
+    disk:                    # persistent storage for uploaded documents (single instance)
+      name: media
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.3
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_SECRET_KEY          # 50+ random chars; generate locally (docs/DEPLOY.md)
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS       # the Vercel site origin, e.g. https://ready2rent.vercel.app
+        sync: false
+      - key: FRONTEND_URL               # same Vercel URL; used for links inside emails
+        sync: false
+      - key: DJANGO_ADMIN_URL           # a non-obvious admin path, e.g. staff-k3v9q/
+        sync: false
+      - key: DJANGO_USE_X_FORWARDED_PROTO
+        value: "true"
+      - key: DJANGO_NUM_PROXIES         # 0 = throttle on the full forwarded chain (no shared buckets)
+        value: "0"
+      - key: MEDIA_ROOT
+        value: /var/data/media
+      - key: CELERY_TASK_ALWAYS_EAGER   # run notification tasks in-process (no worker to pay for)
+        value: "true"
+      - key: EMAIL_BACKEND              # console: emails appear in the service logs
+        value: django.core.mail.backends.console.EmailBackend
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ready2rent-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: ready2rent-redis
+          property: connectionString
+
+  # Optional dedicated Celery worker (adds a paid instance). To enable: uncomment, and set
+  # CELERY_TASK_ALWAYS_EAGER to "false" on the web service. Beat (-B) runs the daily token cleanup.
+  # - type: worker
+  #   name: ready2rent-worker
+  #   runtime: python
+  #   region: oregon
+  #   plan: starter
+  #   rootDir: backend
+  #   buildCommand: pip install -r requirements.txt
+  #   startCommand: celery -A config worker -B -l info --concurrency 1
+  #   envVars:
+  #     - fromGroup: ready2rent-shared   # or repeat the web service's env vars here
+
+  - type: keyvalue
+    name: ready2rent-redis
+    region: oregon
+    plan: free                # cache, throttle counters, broker; nothing here needs persistence
+    maxmemoryPolicy: volatile-lru
+    ipAllowList: []           # internal connections only
+
+databases:
+  - name: ready2rent-db
+    region: oregon
+    plan: basic-256mb
+    databaseName: ready2rent
+    user: ready2rent
+    postgresMajorVersion: "17"
+    ipAllowList: []           # internal connections only
