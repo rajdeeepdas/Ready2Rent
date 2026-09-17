@@ -115,15 +115,13 @@ function AboutSection() {
           <h2>Born at a hackathon, built into a real product</h2>
           <p className="lp-lead">
             Ready2Rent started with something personal: my experience living in an unpermitted
-            basement suite in Calgary. It made the need for safe housing feel close to home and
-            inspired the idea to help homeowners understand and navigate the process of bringing
-            their suites up to code.
+            basement suite in Calgary.
           </p>
           <p className="lp-lead">
-            At the University of Calgary’s Experience Ventures Hackathon, I shared that idea with five
-            fellow students. Over three days, we developed it together into Ready2Rent and won the top
-            prize. Today, I’m building on that work to create a practical platform that brings permits,
-            documents, and progress into one place.
+            At the University of Calgary’s Experience Ventures Hackathon, I shared this idea of
+            legalizing existing basement suites with my teammates. Over three days, we developed it
+            together into Ready2Rent and won the top prize. Today, I’m building on that work to create
+            a virtual platform that brings permits, documents, and progress into one place.
           </p>
         </div>
 
