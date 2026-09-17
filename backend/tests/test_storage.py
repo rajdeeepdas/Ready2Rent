@@ -145,3 +145,40 @@ class TestReleaseCommand:
     def test_is_safe_to_run_repeatedly(self):
         call_command("release", verbosity=0)
         call_command("release", verbosity=0)
+
+
+class TestReleaseDiagnostics:
+    """The start command must explain a failed database connection without leaking the password."""
+
+    from core.management.commands.release import Command as Release
+
+    @pytest.mark.parametrize(
+        "message,expected",
+        [
+            ("connection to server at \"2600:1f14::1\", port 5432 failed: Network is unreachable", "IPv6"),
+            ("Tenant or user not found", "postgres.<project-ref>"),
+            ("password authentication failed for user", "Wrong database password"),
+            ("connection timed out", "paused Supabase project"),
+            ("something unexpected", "Check DATABASE_URL"),
+        ],
+    )
+    def test_hints_match_the_error(self, message, expected):
+        hints = " ".join(self.Release.hints(message, "aws-0-us-west-2.pooler.supabase.com", "postgres.abc"))
+        assert expected in hints
+
+    def test_plain_username_with_pooler_host_is_flagged(self):
+        hints = " ".join(self.Release.hints("Tenant or user not found", "aws-0-us-west-2.pooler.supabase.com", "postgres"))
+        assert "postgres.<project-ref>" in hints
+
+    def test_host_description_reports_address_family(self):
+        assert "127.0.0.1" in " ".join(self.Release.describe_host("localhost"))
+        assert "no host" in " ".join(self.Release.describe_host(""))
+
+    def test_diagnosis_never_prints_the_password(self, settings, capsys):
+        settings.DATABASES = {
+            **settings.DATABASES,
+            "default": {**settings.DATABASES["default"], "PASSWORD": "sup3r-secret-pw", "HOST": "localhost"},
+        }
+        self.Release().report_database_problem(Exception("Network is unreachable"))
+        err = capsys.readouterr().err
+        assert "sup3r-secret-pw" not in err and "DATABASE CONNECTION FAILED" in err

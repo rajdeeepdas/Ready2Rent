@@ -22,6 +22,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.14.3
+      - key: PYTHONUNBUFFERED            # stream startup logs immediately, so failures are visible
+        value: "1"
       - key: DJANGO_DEBUG
         value: "false"
       - key: DJANGO_SECRET_KEY              # 50+ random characters, generated locally
