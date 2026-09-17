@@ -111,16 +111,19 @@ function AboutSection() {
     <section id="about" className="lp-section">
       <div className="lp-container">
         <div className="lp-about-intro">
-          <p className="lp-eyebrow">Our story</p>
+          <p className="lp-eyebrow">The Story</p>
           <h2>Born at a hackathon, built into a real product</h2>
           <p className="lp-lead">
-            Ready2Rent began with six University of Calgary students and a shared goal: help more
-            Calgarians find a safe place to call home. Over three days at the Experience Ventures
-            Hackathon, we developed an idea inspired by our teammate Rajdeep Das’s experience living
-            in an unpermitted basement suite, helping homeowners navigate the uncertainty of bringing
-            their suites up to code. That idea won the top prize. Today, we’re building it into a
-            practical platform that brings permits, documents, and progress together, making the path
-            from basement suite to someone’s next home easier to follow.
+            Ready2Rent started with something personal: my experience living in an unpermitted
+            basement suite in Calgary. It made the need for safe housing feel close to home and
+            inspired the idea to help homeowners understand and navigate the process of bringing
+            their suites up to code.
+          </p>
+          <p className="lp-lead">
+            At the University of Calgary’s Experience Ventures Hackathon, I shared that idea with five
+            fellow students. Over three days, we developed it together into Ready2Rent and won the top
+            prize. Today, I’m building on that work to create a practical platform that brings permits,
+            documents, and progress into one place.
           </p>
         </div>
 

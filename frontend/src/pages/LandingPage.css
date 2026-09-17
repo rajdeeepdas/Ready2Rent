@@ -181,6 +181,7 @@
 /* About intro is centered like the hero; the photo and news card below stay full width. */
 .lp-about-intro { max-width: 720px; margin: 0 auto; text-align: center; }
 .lp-about-intro .lp-lead { margin-left: auto; margin-right: auto; }
+.lp-about-intro .lp-lead:not(:last-child) { margin-bottom: 1rem; } /* tighter gap between story paragraphs */
 
 .lp-photo-card {
   width: 100%;
