@@ -332,7 +332,7 @@ SMTP host, credentials, and a sending domain are external accounts and need Gate
 
 ---
 
-## M7-2. Vercel + Render, deployed from GitHub
+## M7-2. Vercel + Render, deployed from GitHub (superseded by M8-1: moved to free tiers)
 
 **Decision.** The React build is served by Vercel (free). The backend runs on Render from a Blueprint (`render.yaml`): an always-on Starter web service with a 1 GB persistent disk for uploads, Basic PostgreSQL, and a free Key Value (Redis) instance. Both hosts redeploy on push to `main`.
 
@@ -355,3 +355,45 @@ SMTP host, credentials, and a sending domain are external accounts and need Gate
 - **Liveness before host checks.** Platform health checks use internal hosts and plain HTTP. A first-position middleware answers `/api/livez/` (which returns nothing but `{"status": "ok"}`) before `ALLOWED_HOSTS` validation and the HTTPS redirect. Every other path still validates the host.
 - **Throttle identity.** With `DJANGO_NUM_PROXIES=0`, DRF keys throttles on the whole `X-Forwarded-For` chain. This guarantees visitors behind the Vercel proxy never collapse into one shared bucket, which would lock recruiters out of login. The accepted cost is that someone rotating that header can evade per-IP limits; per-account lockout would close it.
 - **CSP.** The built `index.html` loads one module script and one stylesheet and contains no inline code, so the policy allows only `'self'` for scripts and styles.
+
+---
+
+## M8-1. $0 hosting: Vercel Hobby, Render Free, Supabase Free
+
+**Decision.** The paid Render web instance, persistent disk, and Render Postgres are gone. The API runs on a Render Free web service, Redis on Render Free Key Value, and PostgreSQL plus uploaded documents on Supabase Free. The frontend stays on Vercel Hobby with the same `/api` rewrite and CSP.
+
+**Why.** This is a portfolio demo with no real users; paying monthly for idle capacity isn't justified. Django and PostgreSQL stay, so none of the application's transactional or access-control design changes.
+
+**Accepted costs.** Render Free sleeps after 15 idle minutes (about one minute to wake), may restart at any time, and has no disk, Shell, pre-deploy command, or SMTP. Supabase Free pauses after a week of inactivity and has no backups. `docs/DEPLOY.md` lists each limit with its consequence.
+
+## M8-2. Redis kept, on Render Free Key Value
+
+The existing app needs a Redis cache: the ops-queue cache and its version counter, DRF throttle counters, and the staff health check all use it. Render Free Key Value costs nothing, lives on Render's private network, and its data loss on restart is harmless for a cache. Switching to an in-process cache would have changed existing behaviour (and the health report) to save nothing.
+
+## M8-3. Uploads in a private Supabase Storage bucket via django-storages (S3 API)
+
+**Decision.** In production `STORAGES["default"]` is `storages.backends.s3.S3Storage` pointed at Supabase's S3-compatible endpoint (`config/storage.py`); locally and in tests it stays `FileSystemStorage`. New dependencies: `django-storages[s3]` and `boto3`.
+
+**Details that matter.** Supabase needs path-style addressing and SigV4. Recent boto3 releases send optional checksums by default, which S3-compatible services may reject, so checksums are only sent when an operation requires them. `file_overwrite=False` keeps two same-named uploads from replacing each other (the filesystem backend did this implicitly). No ACL is sent and the bucket is private.
+
+**Access control is unchanged.** The app never hands out object URLs. Downloads still go through the ownership-checked views, which read the object with server-only S3 keys (which bypass Supabase's own access rules, so they live only in Render's environment) and stream it back as an attachment.
+
+**How it was verified.** `tests/test_storage.py` runs upload, download, ownership, replace, and same-name uploads on Django's `InMemoryStorage` (a backend with no local paths), and checks the S3 options. Before committing, the same flow ran against a real S3 protocol server (MinIO in Docker) with these exact options: streaming downloads, 404 for another homeowner, deletion on replace, suffixing on name clashes, and 403 for unsigned reads all behaved correctly.
+
+## M8-4. Supabase connectivity: session pooler, TLS, health-checked connections
+
+Supabase direct connections are IPv6-only on the free plan and Render has no IPv6, so `DATABASE_URL` is the Supavisor **session** pooler URI (IPv4, port 5432) with `sslmode=require`. Transaction mode is avoided because it breaks prepared statements, which psycopg uses. Connections are reused for `DB_CONN_MAX_AGE` seconds with `CONN_HEALTH_CHECKS` on, so a connection the pooler dropped while the service slept is replaced instead of failing a request.
+
+The Supabase **Data API is disabled** during setup. Django owns its tables in the `public` schema without Supabase row-level security, so leaving the auto-generated REST API on would expose them.
+
+## M8-5. Replacements for paid-only Render features
+
+| Paid feature | Free-tier replacement |
+|---|---|
+| Pre-deploy command (migrations) | `python manage.py release` in the start command runs `migrate` then `flushexpiredtokens` in one process before gunicorn. Both are idempotent, so running on every start (including wake-ups) is safe; one process keeps cold starts shorter. |
+| Scheduled token cleanup | Same `release` step. Free services restart and sleep often, so cleanup runs frequently without a scheduler. The Celery beat schedule remains for setups with a worker. |
+| Dashboard Shell (`createsuperuser`) | Run `createsuperuser` on your own computer with `DATABASE_URL` set to the session pooler URI for that PowerShell session only. The password never leaves the machine and is never stored in Render. |
+| Background worker | `CELERY_TASK_ALWAYS_EAGER=true`: notification tasks run in the web process after commit; console emails appear in the service logs. |
+| Persistent disk | Supabase Storage (M8-3). |
+
+gunicorn runs one worker with four threads to fit the free instance's memory.

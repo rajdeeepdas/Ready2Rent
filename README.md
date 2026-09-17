@@ -9,18 +9,11 @@ It's one product with two front doors over a single backend and database:
 
 This started as a University of Calgary hackathon project and grew into a full stack build, with the weight on the backend: the data model, transactional writes, and role based access.
 
-> **Status:** Milestones 0 through 7 complete. Deploy configuration is in the repo; see `docs/DEPLOY.md`.
+> **Status:** Milestones 0 through 7 complete. Configured for free-tier hosting (Vercel, Render, Supabase); see [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
-## Demo access
+## Trying it
 
-The live site has one click **Enter as Homeowner** and **Enter as Staff** buttons on the landing page, so you can explore both sides without signing up. To log in manually:
-
-| Role | Email | Password |
-|---|---|---|
-| Homeowner | `demo-homeowner@ready2rent.demo` | `<PASSWORD>` |
-| Staff | `demo-staff@ready2rent.demo` | `<PASSWORD>` |
-
-Both accounts come preloaded with sample applications so the dashboards look populated. This is a demo with sample data only; no real personal information is collected.
+Anyone can create a homeowner account from **Sign up** and submit an application. Staff and admin accounts are created by the site owner in Django admin; there are no public demo credentials or preloaded sample data. The live demo runs on free tiers, so the API may take up to a minute to respond after a period of inactivity (details in [`docs/DEPLOY.md`](docs/DEPLOY.md)).
 
 ## Stack
 
@@ -32,8 +25,9 @@ Both accounts come preloaded with sample applications so the dashboards look pop
 | Cache and broker | Redis 8 |
 | Background jobs | Celery 5.6 |
 | Local infra | Docker Compose (Postgres + Redis) |
+| Hosting | Vercel (frontend), Render (API + Redis), Supabase (PostgreSQL + private file storage) |
 
-The frontend and backend are fully separate and configured through environment variables, so each deploys on its own (SPA on Vercel or Netlify, API plus Postgres plus Redis on Render, Railway, or Fly).
+The frontend and backend are fully separate and configured through environment variables, so each deploys on its own. In production the SPA is on Vercel, the API and Redis are on Render, and PostgreSQL and uploaded files are on Supabase.
 
 ```
 ┌──────────────────┐   HTTPS/JSON    ┌──────────────────────┐
@@ -59,11 +53,11 @@ The frontend and backend are fully separate and configured through environment v
 
 **Ops queue.** Staff get a filterable, paginated queue with per row document and code item counts, plus a summary of counts by status. The queue is cached in Redis and invalidated on every write, and falls back to the database if Redis is down.
 
-**Notifications.** Celery tasks (queued only after a transaction commits) email staff on new leads and email homeowners on status changes and document reviews. Locally these print to the Celery worker's console.
+**Notifications.** Celery tasks (queued only after a transaction commits) email staff on new leads and email homeowners on status changes and document reviews. Email uses Django's console backend: locally messages print in the Celery worker's terminal; on the free hosting tier tasks run inside the web process and messages appear in the Render logs.
 
-**Uploads.** PDF, PNG, and JPEG up to a size cap, checked by extension and magic bytes, served only as authenticated downloads.
+**Uploads.** PDF, PNG, and JPEG up to a size cap, checked by extension and magic bytes, served only as authenticated downloads. Files are stored on local disk in development and in a private Supabase Storage bucket (via its S3 API) in production.
 
-Full endpoint tables and the security review live in `docs/` and `DECISIONS.md`.
+The data model specification is in `docs/schema.md`; the security review and design decisions are in `DECISIONS.md`.
 
 ## Running it locally
 
@@ -99,7 +93,7 @@ pytest
 
 The suite runs against a temporary Postgres database and an isolated Redis, so Docker must be up. It covers the data model (enums, constraints, indexes, delete behaviour, append only history), transactions (intake, transitions, assignment, and document review are all or nothing, with two real threads racing a locked row), and access rules (a matrix built from the URLconf checks every route against every role).
 
-**521 tests, 97% line coverage** (migrations and tests excluded). To reproduce:
+**534 tests, 97% line coverage** (migrations and tests excluded). To reproduce:
 
 ```powershell
 pytest --cov
@@ -107,7 +101,9 @@ pytest --cov
 
 ## Deployment
 
-The frontend deploys to Vercel and the backend to Render, both from this repo. `render.yaml` defines the Django web service (with a persistent disk for uploads), PostgreSQL, and Redis. `frontend/vercel.json` forwards `/api/*` to the backend, so the browser stays on one origin, and sets a strict Content-Security-Policy. The step by step launch checklist is in [`docs/DEPLOY.md`](docs/DEPLOY.md).
+Everything runs on free tiers: the frontend on Vercel, the Django API and a Redis cache on Render, and PostgreSQL plus a private document bucket on Supabase. `frontend/vercel.json` forwards `/api/*` to the API so the browser stays on one origin, and sets a strict Content-Security-Policy. `render.yaml` defines the API and Redis; because free Render services have no pre-deploy step or shell, database migrations run from the start command and the admin account is created locally against the Supabase database.
+
+Free tiers have real limits: the API sleeps after 15 idle minutes and takes about a minute to wake, and the Supabase project pauses after a week without activity. The step by step setup and every limit are in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## How it scales
 
@@ -115,7 +111,7 @@ The frontend deploys to Vercel and the backend to Render, both from this repo. `
 * Indexes back the ops queue, and `select_for_update` keeps concurrent staff actions correct on a single hot row. Read replicas can serve reads when needed.
 * Redis caches the queue, which is read far more than it changes.
 * Celery workers scale independently of the API.
-* File storage targets Django's storage API, so `MEDIA_ROOT` can become S3 compatible object storage without touching business logic.
+* File storage goes through Django's storage API. Production already uses S3-compatible object storage, so switching providers is configuration only.
 
 ## Milestones
 

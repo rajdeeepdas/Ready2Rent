@@ -29,3 +29,7 @@ whitenoise==6.12.0
 
 # Coverage reporting (approved at launch)
 pytest-cov==7.0.0
+
+# Production uploads: private Supabase Storage bucket over its S3-compatible API
+django-storages[s3]==1.14.6
+boto3==1.43.96

@@ -11,6 +11,8 @@ from pathlib import Path
 
 import environ
 
+from .storage import build_storages
+
 BASE_DIR = Path(__file__).resolve().parent.parent  # backend/
 REPO_ROOT = BASE_DIR.parent
 
@@ -148,8 +150,11 @@ else:
             "PORT": env("POSTGRES_PORT", default="5432"),
         }
     }
-DATABASES["default"]["CONN_MAX_AGE"] = 60
-DATABASES["default"].setdefault("OPTIONS", {})["connect_timeout"] = 5
+# Reuse connections, but verify them first: a managed pooler (Supabase Supavisor) may close
+# idle connections, e.g. while the free web service is asleep.
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=60)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+DATABASES["default"].setdefault("OPTIONS", {})["connect_timeout"] = 10
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -344,7 +349,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
-# Homeowner document uploads, never served publicly. Production points this at a persistent disk.
+# Local upload directory (development and tests). Production uses Supabase Storage; see STORAGES below.
 MEDIA_ROOT = Path(env("MEDIA_ROOT", default=str(BASE_DIR / "media")))
 MAX_UPLOAD_MB = env.int("MAX_UPLOAD_MB", default=20)
 MAX_OTHER_DOCUMENTS = env("MAX_OTHER_DOCUMENTS")  # extra "other" uploads allowed per application
@@ -352,23 +357,18 @@ MAX_OTHER_DOCUMENTS = env("MAX_OTHER_DOCUMENTS")  # extra "other" uploads allowe
 # bodies (JSON); uploaded files stream to disk and are capped separately by MAX_UPLOAD_MB.
 FILE_UPLOAD_PERMISSIONS = 0o640
 
-STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {
-        # Hashed, compressed static files in production (run collectstatic at build time).
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
-        if DEBUG
-        else "whitenoise.storage.CompressedManifestStaticFilesStorage"
-    },
-}
-
-# ---------------------------------------------------------------------------
-# Logging: plain console output, fine for dev and for hosted log collectors
-# ---------------------------------------------------------------------------
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {"simple": {"format": "%(levelname)s %(name)s: %(message)s"}},
-    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "simple"}},
-    "root": {"handlers": ["console"], "level": "INFO"},
-}
+# Uploads: local filesystem by default; a private Supabase Storage bucket (S3 API) when
+# SUPABASE_S3_ENDPOINT_URL is set. See config/storage.py.
+_supabase_endpoint = env("SUPABASE_S3_ENDPOINT_URL", default="")
+STORAGES = build_storages(
+    debug=DEBUG,
+    s3={
+        "endpoint_url": _supabase_endpoint,
+        "region_name": env("SUPABASE_S3_REGION", default=""),
+        "access_key": env("SUPABASE_S3_ACCESS_KEY_ID", default=""),
+        "secret_key": env("SUPABASE_S3_SECRET_ACCESS_KEY", default=""),
+        "bucket_name": env("SUPABASE_STORAGE_BUCKET", default="documents"),
+    }
+    if _supabase_endpoint
+    else None,
+)

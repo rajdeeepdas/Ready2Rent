@@ -1,82 +1,66 @@
-# Render Blueprint for the Ready2Rent backend: Django API + PostgreSQL + Redis (Key Value).
-# Deploy: Render dashboard -> New -> Blueprint -> pick this GitHub repo. See docs/DEPLOY.md.
+# Render Blueprint for the Ready2Rent API on Render's FREE tier.
+#   Django web service (free) + Key Value / Redis (free).
+#   PostgreSQL and uploaded files live on Supabase (free); see docs/DEPLOY.md.
 #
-# Values marked `sync: false` are prompted for in the dashboard during Blueprint setup.
-# Never commit real secrets to this file.
+# Deploy: Render dashboard -> New -> Blueprint -> pick this GitHub repo.
+# Values marked `sync: false` are prompted for once, when the Blueprint is first created.
+# Never put real secrets in this file.
 
 services:
   - type: web
     name: ready2rent-api
     runtime: python
-    region: oregon
-    plan: starter            # always on: no cold starts
+    region: oregon                 # keep close to the Supabase project region (US West / Oregon)
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
-    preDeployCommand: python manage.py migrate --noinput && python manage.py flushexpiredtokens
-    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --access-logfile -
+    # Free services have no pre-deploy step, so migrations and expired-token cleanup run in one
+    # process at startup (both are idempotent), then gunicorn starts. One worker with threads
+    # fits the free instance's memory.
+    startCommand: python manage.py release && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 --access-logfile -
     healthCheckPath: /api/livez/
-    disk:                    # persistent storage for uploaded documents (single instance)
-      name: media
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.14.3
       - key: DJANGO_DEBUG
         value: "false"
-      - key: DJANGO_SECRET_KEY          # 50+ random chars; generate locally (docs/DEPLOY.md)
+      - key: DJANGO_SECRET_KEY              # 50+ random characters, generated locally
         sync: false
-      - key: CSRF_TRUSTED_ORIGINS       # the Vercel site origin, e.g. https://ready2rent.vercel.app
+      - key: DJANGO_ADMIN_URL               # non-obvious admin path, e.g. staff-1a2b3c4d/
         sync: false
-      - key: FRONTEND_URL               # same Vercel URL; used for links inside emails
+      - key: CSRF_TRUSTED_ORIGINS           # the Vercel site origin, e.g. https://ready2rent.vercel.app
         sync: false
-      - key: DJANGO_ADMIN_URL           # a non-obvious admin path, e.g. staff-k3v9q/
+      - key: FRONTEND_URL                   # same Vercel URL; used for links inside emails
         sync: false
+      - key: DATABASE_URL                   # Supabase SESSION POOLER URI (IPv4), ends in ?sslmode=require
+        sync: false
+      - key: SUPABASE_S3_ENDPOINT_URL       # https://<project-ref>.storage.supabase.co/storage/v1/s3
+        sync: false
+      - key: SUPABASE_S3_REGION             # the Supabase project region, e.g. us-west-2
+        sync: false
+      - key: SUPABASE_S3_ACCESS_KEY_ID
+        sync: false
+      - key: SUPABASE_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET        # private bucket for uploaded documents
+        value: documents
       - key: DJANGO_USE_X_FORWARDED_PROTO
         value: "true"
-      - key: DJANGO_NUM_PROXIES         # 0 = throttle on the full forwarded chain (no shared buckets)
+      - key: DJANGO_NUM_PROXIES             # 0 = throttle on the full forwarded chain (no shared buckets)
         value: "0"
-      - key: MEDIA_ROOT
-        value: /var/data/media
-      - key: CELERY_TASK_ALWAYS_EAGER   # run notification tasks in-process (no worker to pay for)
+      - key: CELERY_TASK_ALWAYS_EAGER       # no worker on the free tier: tasks run in-process
         value: "true"
-      - key: EMAIL_BACKEND              # console: emails appear in the service logs
+      - key: EMAIL_BACKEND                  # console: emails appear in the service logs
         value: django.core.mail.backends.console.EmailBackend
-      - key: DATABASE_URL
-        fromDatabase:
-          name: ready2rent-db
-          property: connectionString
       - key: REDIS_URL
         fromService:
           type: keyvalue
           name: ready2rent-redis
           property: connectionString
 
-  # Optional dedicated Celery worker (adds a paid instance). To enable: uncomment, and set
-  # CELERY_TASK_ALWAYS_EAGER to "false" on the web service. Beat (-B) runs the daily token cleanup.
-  # - type: worker
-  #   name: ready2rent-worker
-  #   runtime: python
-  #   region: oregon
-  #   plan: starter
-  #   rootDir: backend
-  #   buildCommand: pip install -r requirements.txt
-  #   startCommand: celery -A config worker -B -l info --concurrency 1
-  #   envVars:
-  #     - fromGroup: ready2rent-shared   # or repeat the web service's env vars here
-
   - type: keyvalue
     name: ready2rent-redis
     region: oregon
-    plan: free                # cache, throttle counters, broker; nothing here needs persistence
+    plan: free                     # 25 MB, not persisted: cache and rate-limit counters only
     maxmemoryPolicy: volatile-lru
-    ipAllowList: []           # internal connections only
-
-databases:
-  - name: ready2rent-db
-    region: oregon
-    plan: basic-256mb
-    databaseName: ready2rent
-    user: ready2rent
-    postgresMajorVersion: "17"
-    ipAllowList: []           # internal connections only
+    ipAllowList: []                # private network only
