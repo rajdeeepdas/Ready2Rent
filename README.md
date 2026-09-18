@@ -124,4 +124,4 @@ Free tiers have real limits: the API sleeps after 15 idle minutes and takes abou
 | 4 | Ops queue: detail, transitions, assignment, visits | Done |
 | 5 | Redis caching and Celery notifications | Done |
 | 6 | Test suite | Done |
-| 7 | Production build and deploy | Done |
+| 7 | Production build and deploy | Pending |
