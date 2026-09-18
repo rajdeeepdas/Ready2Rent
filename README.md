@@ -63,26 +63,70 @@ The data model specification is in `docs/schema.md`; the security review and des
 
 You'll need Python 3.14, Node 24, and Docker Desktop.
 
-```powershell
-copy .env.example .env          # set DJANGO_SECRET_KEY and POSTGRES_PASSWORD
-docker compose up -d            # Postgres + Redis
+### 1. Environment file
 
+```powershell
+copy .env.example .env
+```
+
+Open `.env` and set `DJANGO_SECRET_KEY` and `POSTGRES_PASSWORD` at minimum. Generate a key with `python -c "import secrets; print(secrets.token_urlsafe(64))"`. The same file configures both Docker Compose and Django, so the database password can never drift between them.
+
+### 2. Database and cache
+
+```powershell
+docker compose up -d            # starts Postgres and Redis
+```
+
+### 3. Backend
+
+```powershell
 cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py createsuperuser
 python manage.py runserver      # API at http://localhost:8000
+```
 
-cd ..\frontend
+### 4. Frontend
+
+In a second terminal:
+
+```powershell
+cd frontend
 npm install
 npm run dev                     # app at http://localhost:5173
 ```
 
-For notifications, run a Celery worker in another terminal: `celery -A config worker -l info --pool=solo` (drop `--pool=solo` off Windows). Emails print there.
+Open http://localhost:5173. You can sign up as a homeowner and submit an application right away.
 
-Routes: `/` landing page, `/register` signup, `/login`, `/app` homeowner dashboard, `/ops` staff queue, `/health` system health (staff or admin only).
+### 5. Notification emails (optional)
+
+Notifications are Celery tasks. Run a worker in a third terminal and the emails print there instead of being sent:
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+celery -A config worker -l info --pool=solo
+```
+
+`--pool=solo` is only needed on Windows. Without a worker the app still works; the tasks simply queue in Redis until one starts.
+
+### 6. Staff and admin accounts (optional)
+
+Signing up through the site always creates a homeowner. To see the ops side, create an admin account, which is also the only role that can open Django admin:
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+python manage.py createsuperuser
+```
+
+It asks for an email, name, and password. Log in with it at http://localhost:5173 and you land on the staff lead queue. To add staff who are not admins, open Django admin at http://localhost:8000/admin/, add a user, and set **Role** to *Staff*.
+
+### Routes
+
+`/` landing page, `/register` signup, `/login`, `/app` homeowner dashboard, `/ops` staff queue, `/health` system health (staff or admin only).
 
 ## Tests
 
