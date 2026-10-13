@@ -64,5 +64,3 @@ Ready2Rent helps Calgary homeowners legalize their basement suites. ~Two-thirds 
 ## Discipline
 - After each milestone, explain the changes and give run/verify instructions. **Do not use Git during development** (no init, commits, remotes, or push).
 - Create a `.gitignore` (secrets, dependencies, uploads) now, ready for the eventual manual upload.
-- Keep a `DECISIONS.md` logging key choices and tradeoffs (interview talking points).
-- Write a `README.md` covering architecture, the data model, why Celery instead of Kafka at this scale, and how the system would scale.
